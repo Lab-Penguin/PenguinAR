@@ -51,7 +51,6 @@ export class ARImage {
 
         const H = this.cv.findHomography(src, dst);
 
-
         const imageMat =
             this.cv.imread(
                 this.image
@@ -71,26 +70,36 @@ export class ARImage {
 
 
         // máscara da região da imagem
-        const points =
-            this.cv.matFromArray(
-                4,
-                1,
-                this.cv.CV_32SC2,
+        const imageCorners =
+            this.cv.matFromArray(4, 1, this.cv.CV_32FC2,
                 [
-                    marker.corners[0].x,
-                    marker.corners[0].y,
-
-                    marker.corners[1].x,
-                    marker.corners[1].y,
-
-                    marker.corners[2].x,
-                    marker.corners[2].y,
-
-                    marker.corners[3].x,
-                    marker.corners[3].y
+                    0, 0,
+                    w, 0,
+                    w, h,
+                    0, h
                 ]
             );
+        const projectedCorners = new this.cv.Mat();
+        this.cv.perspectiveTransform(imageCorners, projectedCorners, H);
+        const projectedInt =
+            this.cv.matFromArray(
+                4,
+                2,
+                this.cv.CV_32S,
+                [
+                    Math.round(projectedCorners.data32F[0]),
+                    Math.round(projectedCorners.data32F[1]),
 
+                    Math.round(projectedCorners.data32F[2]),
+                    Math.round(projectedCorners.data32F[3]),
+
+                    Math.round(projectedCorners.data32F[4]),
+                    Math.round(projectedCorners.data32F[5]),
+
+                    Math.round(projectedCorners.data32F[6]),
+                    Math.round(projectedCorners.data32F[7])
+                ]
+            );
 
         const mask =
             new this.cv.Mat.zeros(
@@ -102,7 +111,7 @@ export class ARImage {
 
         this.cv.fillConvexPoly(
             mask,
-            points,
+            projectedInt,
             new this.cv.Scalar(255)
         );
 
@@ -118,7 +127,9 @@ export class ARImage {
         H.delete();
         imageMat.delete();
         warped.delete();
-        points.delete();
+        imageCorners.delete();
+        projectedCorners.delete();
+        projectedInt.delete();
         mask.delete();
 
     }
