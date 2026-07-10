@@ -70,8 +70,46 @@ export class ARImage {
         );
 
 
+        // máscara da região da imagem
+        const points =
+            this.cv.matFromArray(
+                4,
+                1,
+                this.cv.CV_32SC2,
+                [
+                    marker.corners[0].x,
+                    marker.corners[0].y,
+
+                    marker.corners[1].x,
+                    marker.corners[1].y,
+
+                    marker.corners[2].x,
+                    marker.corners[2].y,
+
+                    marker.corners[3].x,
+                    marker.corners[3].y
+                ]
+            );
+
+
+        const mask =
+            new this.cv.Mat.zeros(
+                frame.rows,
+                frame.cols,
+                this.cv.CV_8UC1
+            );
+
+
+        this.cv.fillConvexPoly(
+            mask,
+            points,
+            new this.cv.Scalar(255)
+        );
+
+
         warped.copyTo(
-            frame
+            frame,
+            mask
         );
 
 
@@ -80,6 +118,8 @@ export class ARImage {
         H.delete();
         imageMat.delete();
         warped.delete();
+        points.delete();
+        mask.delete();
 
     }
 
