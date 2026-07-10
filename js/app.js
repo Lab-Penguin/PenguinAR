@@ -3,6 +3,9 @@ import { Renderer } from "./core/renderer.js";
 import { Detector } from "./core/detector.js";
 import { Drawer } from "./core/drawer.js";
 import { PoseEstimator } from "./core/pose.js";
+import { ARImage } from "./core/ar_image.js";
+import { ARManager } from "./core/ar_manager.js";
+import { AR_CONFIG } from "./core/config.js";
 
 
 console.log("app.js iniciou");
@@ -54,9 +57,17 @@ const renderer =
 const detector =
     new Detector(CV);
 
+
+const arManager =
+    new ARManager(CV, AR_CONFIG);
+await arManager.load();
+
     
 const drawer =
     new Drawer(CV);
+
+const arImage =
+    new ARImage(CV, document.getElementById("arImage"));
 
 
 video.addEventListener(
@@ -108,7 +119,8 @@ function loop(){
             console.log(marker);
             pose.estimate(marker);
             drawer.drawMarker(frame, marker);
-            drawer.drawAxes(frame, marker, cameraMatrix, distCoeffs);
+            arManager.apply(frame, marker);
+            // drawer.drawAxes(frame, marker, cameraMatrix, distCoeffs);
         }
 
 
