@@ -1,3 +1,5 @@
+import { Marker } from "./marker.js";
+
 export class Detector {
 
     constructor(cv) {
@@ -50,11 +52,36 @@ export class Detector {
             rejected
         );
 
+        const markers = [];
 
-        return {
-            corners: corners,
-            ids: ids,
-            rejected: rejected
-        };
+        for(let i = 0; i < ids.rows; i++){
+
+            const id = ids.intPtr(i, 0)[0];
+
+            const corner = corners.get(i);
+
+            const points = [];
+
+            for(let j = 0; j < 4; j++){
+
+                const p = corner.floatPtr(0, j);
+
+                points.push({
+                    x: p[0],
+                    y: p[1]
+                });
+            }
+
+            markers.push(
+                new Marker(
+                    id,
+                    points
+                )
+            );
+
+            corner.delete();
+        }
+
+        return markers;
     }
 }

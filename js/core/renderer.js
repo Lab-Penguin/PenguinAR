@@ -41,51 +41,11 @@ export class Renderer {
     }
 
 
-    drawCircle(x,y,r){
+    show(cv, frame){
 
-        this.ctx.beginPath();
-
-        this.ctx.arc(
-            x,
-            y,
-            r,
-            0,
-            Math.PI*2
-        );
-
-        this.ctx.strokeStyle = "red";
-        this.ctx.lineWidth = 5;
-
-        this.ctx.stroke();
-
-    }
-
-
-    drawText(text,x,y){
-
-        this.ctx.font =
-            "bold 40px Arial";
-
-        this.ctx.fillStyle =
-            "white";
-
-        this.ctx.strokeStyle =
-            "black";
-
-        this.ctx.lineWidth = 5;
-
-
-        this.ctx.strokeText(
-            text,
-            x,
-            y
-        );
-
-
-        this.ctx.fillText(
-            text,
-            x,
-            y
+        cv.imshow(
+            this.canvas,
+            frame
         );
 
     }

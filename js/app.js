@@ -1,12 +1,29 @@
 import { Camera } from "./core/camera.js";
 import { Renderer } from "./core/renderer.js";
 import { Detector } from "./core/detector.js";
+import { Drawer } from "./core/drawer.js";
+import { PoseEstimator } from "./core/pose.js";
 
 
 console.log("app.js iniciou");
 
-
 const CV = await cv;
+
+function createCameraMatrix(cv, width, height){
+
+    const f = Math.max(width, height);
+
+    const cx = width / 2;
+
+    const cy = height / 2;
+
+    return cv.matFromArray(3, 3, cv.CV_64F,
+        [f, 0, cx,
+         0, f, cy,
+         0, 0, 1]
+    );
+
+}
 
 console.log("OpenCV carregado", CV);
 console.log("ArUco:", CV.aruco);
@@ -37,6 +54,9 @@ const renderer =
 const detector =
     new Detector(CV);
 
+    
+const drawer =
+    new Drawer(CV);
 
 
 video.addEventListener(
@@ -45,6 +65,12 @@ video.addEventListener(
 
         renderer.resize();
 
+        captureCanvas.width =
+            video.videoWidth;
+
+        captureCanvas.height =
+            video.videoHeight;
+
     }
 );
 
@@ -52,96 +78,44 @@ video.addEventListener(
 
 await camera.start();
 
+const cameraMatrix =
+    createCameraMatrix(CV, video.videoWidth, video.videoHeight);
+
+
+const distCoeffs =
+    CV.matFromArray(5, 1, CV.CV_64F,
+        [0, 0, 0, 0, 0]
+    );
+
+const pose =
+    new PoseEstimator(CV, cameraMatrix, distCoeffs, 0.05);
 
 function loop(){
 
     if(video.readyState === video.HAVE_ENOUGH_DATA){
 
-        captureCanvas.width = video.videoWidth;
-        captureCanvas.height = video.videoHeight;
-
-
-        captureCtx.drawImage(
-            video,
-            0,
-            0,
-            captureCanvas.width,
-            captureCanvas.height
-        );
+        captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
 
 
         const frame =
             CV.imread(captureCanvas);
 
 
-        const result =
-            detector.detect(frame);
-
-        console.log(
-            "ids:",
-            result.ids.rows,
-            result.ids.data
-        );
+        const markers = detector.detect(frame);
 
 
-        if(result.ids.rows > 0){
-
-            console.log(
-                "Marcadores:",
-                result.ids.data
-            );
-            console.log(
-                "tipo ids:",
-                result.ids.type,
-                result.ids.rows,
-                result.ids.cols
-            );
-            for(let i = 0; i < result.corners.size(); i++){
-
-                const corner = result.corners.get(i);
-
-                for(let j = 0; j < 4; j++){
-
-                    const p1 = corner.floatPtr(0, j);
-                    const p2 = corner.floatPtr(0, (j + 1) % 4);
-
-                    CV.line(
-                        frame,
-                        new CV.Point(
-                            p1[0],
-                            p1[1]
-                        ),
-                        new CV.Point(
-                            p2[0],
-                            p2[1]
-                        ),
-                        new CV.Scalar(
-                            0,
-                            255,
-                            0,
-                            255
-                        ),
-                        3
-                    );
-                }
-
-                corner.delete();
-            }
-            
-
+        for(const marker of markers){
+            console.log(marker);
+            pose.estimate(marker);
+            drawer.drawMarker(frame, marker);
+            drawer.drawAxes(frame, marker, cameraMatrix, distCoeffs);
         }
 
 
-        CV.imshow(
-            canvas,
-            frame
-        );
+        renderer.show(CV, frame);
 
 
         frame.delete();
-        result.ids.delete();
-        result.corners.delete();
-        result.rejected.delete();
     }
 
 
